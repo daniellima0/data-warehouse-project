@@ -2,7 +2,7 @@
 DECLARE
     CURSOR cur_Dados IS
         SELECT C.DESCRICAO CIDADE, E.DESCRICAO ESTADO 
-        FROM CIDADE C JOIN ESTADO E ON c.id_cidade = e.id_estado;
+        FROM C##OLTP.CIDADE C JOIN C##OLTP.ESTADO E ON c.id_cidade = e.id_estado;
     reg_Dados cur_Dados%ROWTYPE;
 BEGIN
     OPEN cur_Dados;
@@ -12,7 +12,7 @@ BEGIN
         
         EXIT WHEN cur_Dados%NOTFOUND;
         
-        INSERT INTO LOCALIDADES (ID_LOCAL, ESTADO, CIDADE)
+        INSERT INTO LOCALIDADE (ID_LOCAL, ESTADO, CIDADE)
         VALUES (SQ_LOCALIDADE.NEXTVAL, Reg_Dados.ESTADO, Reg_Dados.CIDADE);
     END LOOP;
     
@@ -24,11 +24,11 @@ EXCEPTION
         RAISE;
 END;
 
---APARELOHS
+--APARELHO
 DECLARE
     CURSOR cur_Dados IS
         SELECT M.DESCRICAO MODELO, MA.DESCRICAO MARCA 
-        FROM MODELO M JOIN  APARELHO ON m.id_modelo =  aparelho.id_aparelho JOIN MARCA MA ON aparelho.id_aparelho = ma.id_marca;
+        FROM C##OLTP.MODELO M JOIN C##OLTP.APARELHO ON m.id_modelo =  aparelho.id_aparelho JOIN C##OLTP.MARCA MA ON aparelho.id_aparelho = ma.id_marca;
     reg_Dados cur_Dados%ROWTYPE;
 BEGIN
     OPEN cur_Dados;
@@ -38,8 +38,8 @@ BEGIN
         
         EXIT WHEN cur_Dados%NOTFOUND;
         
-        INSERT INTO APARELHOS (ID_APARELHO, MODELO, MARCA)
-        VALUES (SQ_APARELHOS.NEXTVAL, Reg_Dados.MODELO, Reg_Dados.MARCA);
+        INSERT INTO APARELHO (ID_APARELHO, MODELO, MARCA)
+        VALUES (SQ_APARELHO.NEXTVAL, Reg_Dados.MODELO, Reg_Dados.MARCA);
     END LOOP;
     
     CLOSE cur_Dados;
