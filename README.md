@@ -1,3 +1,4 @@
-# data-warehouse-project
+# Data Warehouse Project
 
-![Project screenshot](./Captura de tela de 2023-08-24 21-32-58.png "Project screenshot")
+## Relational Model
+![Project screenshot](./relational-model.png "Project screenshot")
