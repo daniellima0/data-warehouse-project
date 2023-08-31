@@ -52,8 +52,32 @@ EXCEPTION
 END;
 
 --GENERO
-INSERT INTO GENERO (ID_GENERO, GENERO)
-        VALUES (SQ_GENERO.NEXTVAL, 'F');
+DECLARE
+    CURSOR cur_Dados IS
+        SELECT SEXO FROM C##OLTP.CLIENTE;
+
+    reg_Dados cur_Dados%ROWTYPE;
+BEGIN
+    OPEN cur_Dados;
+    
+    LOOP
+        FETCH cur_Dados INTO reg_Dados;
+        
+        EXIT WHEN cur_Dados%NOTFOUND;
+        
+        INSERT INTO GENERO (ID_GENERO, GENERO)
+        VALUES (SQ_GENERO.NEXTVAL, reg_Dados.SEXO);
+    END LOOP;
+    
+    CLOSE cur_Dados;
+    
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+END;
+
 
 --TEMPO
 DECLARE
