@@ -50,3 +50,41 @@ EXCEPTION
         ROLLBACK;
         RAISE;
 END;
+
+--GENERO
+INSERT INTO GENERO (ID_GENERO, GENERO)
+        VALUES (SQ_GENERO.NEXTVAL, 'F');
+
+--TEMPO
+DECLARE
+    CURSOR cur_Dados IS
+        SELECT DISTINCT
+            EXTRACT(YEAR FROM C.DATA) AS ANO, 
+            CASE 
+                WHEN TO_CHAR(DATA, 'MM') IN ('01', '02', '03', '04') THEN 1
+                WHEN TO_CHAR(DATA, 'MM') IN ('05', '06', '07', '08') THEN 2
+                WHEN TO_CHAR(DATA, 'MM') IN ('09', '10', '11', '12') THEN 3
+            END AS QUADRIMESTRE
+        FROM C##OLTP.COMPRA C;
+    reg_Dados cur_Dados%ROWTYPE;
+    QUADRIMESTRE NUMBER;
+BEGIN
+    OPEN cur_Dados;
+    
+    LOOP
+        FETCH cur_Dados INTO reg_Dados;
+        
+        EXIT WHEN cur_Dados%NOTFOUND;
+        
+        INSERT INTO TEMPO (ID_TEMPO, ANO, QUADRIMESTRE)
+        VALUES (SQ_TEMPO.NEXTVAL, reg_Dados.ano, reg_Dados.QUADRIMESTRE);
+    END LOOP;
+    
+    CLOSE cur_Dados;
+    
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+END;
