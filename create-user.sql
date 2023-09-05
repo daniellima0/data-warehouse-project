@@ -8,3 +8,36 @@ GRANT CONNECT, DBA TO C##OLTP;
 /* DELETE USERS */
 DROP USER C##OLAP CASCADE;
 DROP USER C##OLTP CASCADE;
+
+
+
+
+
+--###############################################
+--#############  DIFERENTE  #####################
+--###############################################
+
+/*SEM PRIVILEGIO DE DBA*/
+--Criar um novo usuário
+CREATE USER C##OLTP IDENTIFIED BY 1234;
+CREATE USER C##OLAP IDENTIFIED BY 1234;
+
+--Para permitir que o novo usuário se conecte ao banco de dados
+GRANT CREATE SESSION TO C##OLTP;
+GRANT CREATE SESSION TO C##OLAP;
+
+--Para permitir que o novo usuário crie tabelas
+GRANT CREATE TABLE TO C##OLTP;
+GRANT CREATE TABLE TO C##OLAP;
+
+--Para permitir criar procedures
+GRANT CREATE PROCEDURE TO C##OLTP;
+GRANT CREATE PROCEDURE TO C##OLAP;
+
+--Conceder Quota Ilimitada
+ALTER USER C##OLTP QUOTA UNLIMITED ON USERS;
+ALTER USER C##OLAP QUOTA UNLIMITED ON USERS;
+
+--Permissão para criar sequence
+GRANT CREATE SEQUENCE TO C##OLTP;
+GRANT CREATE SEQUENCE TO C##OLAP;
