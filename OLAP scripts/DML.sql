@@ -28,7 +28,7 @@ END;
 DECLARE
     CURSOR cur_Dados IS
         SELECT M.DESCRICAO MODELO, MA.DESCRICAO MARCA 
-        FROM C##OLTP.MODELO M JOIN C##OLTP.APARELHO ON m.id_modelo =  aparelho.id_aparelho JOIN C##OLTP.MARCA MA ON aparelho.id_aparelho = ma.id_marca;
+        FROM C##OLTP.MARCA MA JOIN C##OLTP.MODELO M ON m.id_marca =  ma.id_marca;
     reg_Dados cur_Dados%ROWTYPE;
 BEGIN
     OPEN cur_Dados;
@@ -96,28 +96,37 @@ END;
 DECLARE
     CURSOR C_VENDA IS
         SELECT
+            DISTINCT
+            EXTRACT(YEAR FROM CO.DATA) AS ANO, 
+            CASE 
+                WHEN TO_CHAR(DATA, 'MM') IN ('01', '02', '03', '04') THEN 1
+                WHEN TO_CHAR(DATA, 'MM') IN ('05', '06', '07', '08') THEN 2
+                WHEN TO_CHAR(DATA, 'MM') IN ('09', '10', '11', '12') THEN 3
+            END AS QUADRIMESTRE,
             M.DESCRICAO AS MODELO,
             MA.DESCRICAO AS MARCA,
             CI.DESCRICAO AS CIDADE,
             ES.DESCRICAO AS ESTADO,
             CL.SEXO,
-            CO.DATA,
             CA.QUANTIDADE,
             CA.VALOR
+            
         FROM C##OLTP.APARELHO A
-        JOIN C##OLTP.MODELO M ON A.ID_MODELO = M.ID_MODELO
-        JOIN C##OLTP.MARCA MA ON M.ID_MARCA = MA.ID_MARCA
-        JOIN C##OLTP.CARRINHO CA ON A.ID_APARELHO = CA.ID_APARELHO
-        JOIN C##OLTP.COMPRA CO ON CA.ID_COMPRA = CO.ID_COMPRA
-        JOIN C##OLTP.CLIENTE CL ON CO.ID_CLIENTE = CL.ID_CLIENTE
-        JOIN C##OLTP.CIDADE CI ON CL.ID_CIDADE = CI.ID_CIDADE
-        JOIN C##OLTP.ESTADO ES ON CI.ID_ESTADO = ES.ID_ESTADO;
+            JOIN C##OLTP.MODELO M ON A.ID_MODELO = M.ID_MODELO
+            JOIN C##OLTP.MARCA MA ON M.ID_MARCA = MA.ID_MARCA
+            JOIN C##OLTP.CARRINHO CA ON A.ID_APARELHO = CA.ID_APARELHO
+            JOIN C##OLTP.COMPRA CO ON CA.ID_COMPRA = CO.ID_COMPRA
+            JOIN C##OLTP.CLIENTE CL ON CO.ID_CLIENTE = CL.ID_CLIENTE
+            JOIN C##OLTP.CIDADE CI ON CL.ID_CIDADE = CI.ID_CIDADE
+            JOIN C##OLTP.ESTADO ES ON CI.ID_ESTADO = ES.ID_ESTADO;
+                    
         
     LINHA C_VENDA%ROWTYPE;
-    CURRENT_ID_APARELHO NUMBER;
-    CURRENT_ID_GENERO NUMBER;
-    CURRENT_ID_TEMPO NUMBER;
-    CURRENT_ID_LOCAL NUMBER;
+    
+    CURRENT_ID_APARELHO NUMERIC;
+    CURRENT_ID_GENERO NUMERIC;
+    CURRENT_ID_TEMPO NUMERIC;
+    CURRENT_ID_LOCAL NUMERIC;
     
 BEGIN
     OPEN C_VENDA;
@@ -126,18 +135,56 @@ BEGIN
         FETCH C_VENDA INTO LINHA;
         EXIT WHEN C_VENDA%NOTFOUND;
         
+        
+        --SELECT APARELHO
         SELECT
             ID_APARELHO
-        INTO CURRENT_ID_APARELHO
-        FROM APARELHO
-        WHERE LINHA.MODELO = APARELHO.MODELO AND LINHA.MARCA = APARELHO.MARCA;
+        INTO 
+            CURRENT_ID_APARELHO
+        FROM
+            C##OLAP.APARELHO
+        WHERE 
+            LINHA.MODELO = APARELHO.MODELO AND LINHA.MARCA = APARELHO.MARCA;
         
+        SELECT * FROM C##OLAP.APARELHO;
+        
+        --SELECT TEMPO
+        SELECT 
+            ID_TEMPO
+        INTO
+            CURRENT_ID_TEMPO
+        FROM
+            C##OLAP.TEMPO
+        WHERE 
+            LINHA.ANO = TEMPO.ANO AND LINHA.QUADRIMESTRE = TEMPO.QUADRIMESTRE ;
+            
+            
+            
+        --SELECT LOCALIDADE
+        SELECT 
+            ID_LOCAL
+        INTO
+            CURRENT_ID_LOCAL
+        FROM
+            C##OLAP.LOCALIDADE
+        WHERE
+            LINHA.ESTADO = LOCALIDADE.ESTADO AND LINHA.CIDADE = LOCALIDADE.CIDADE;
+            
+        
+        --SELECT GENERO
+        SELECT
+            G.ID_GENERO
+        INTO
+            CURRENT_ID_GENERO
+        FROM
+            C##OLAP.GENERO G
+        WHERE
+            LINHA.SEXO = G.GENERO;
+            
         DBMS_OUTPUT.PUT_LINE('CURRENT_ID_APARELHO: ' || CURRENT_ID_APARELHO);
         
-        /*
         INSERT INTO C##OLAP.VENDA (ID_VENDA, ID_APARELHO, ID_LOCAL, ID_GENERO, ID_TEMPO, QUANTIDADE, VALOR)
-        VALUES (SQ_VENDA.NEXTVAL, , );
-        */
+        VALUES (SQ_VENDA.NEXTVAL, CURRENT_ID_APARELHO, CURRENT_ID_LOCAL, CURRENT_ID_GENERO, CURRENT_ID_TEMPO, );
     
     END LOOP;
     
@@ -151,3 +198,4 @@ EXCEPTION
         RAISE;
     
 END;
+
