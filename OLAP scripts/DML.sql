@@ -1,9 +1,15 @@
 --LOCALIDADE
 DECLARE
     CURSOR cur_Dados IS
-        SELECT C.DESCRICAO CIDADE, E.DESCRICAO ESTADO 
-        FROM C##OLTP.CIDADE C JOIN C##OLTP.ESTADO E ON c.id_cidade = e.id_estado;
+    
+        SELECT 
+            C.DESCRICAO CIDADE, E.DESCRICAO ESTADO 
+        FROM 
+            C##OLTP.CIDADE C JOIN C##OLTP.ESTADO E ON c.id_estado = e.id_estado;
+    
     reg_Dados cur_Dados%ROWTYPE;
+    
+    V_COUNT NUMERIC;
 BEGIN
     OPEN cur_Dados;
     
@@ -12,14 +18,28 @@ BEGIN
         
         EXIT WHEN cur_Dados%NOTFOUND;
         
-        INSERT INTO C##OLAP.LOCALIDADE (ID_LOCAL, ESTADO, CIDADE)
-        VALUES (SQ_LOCALIDADE.NEXTVAL, Reg_Dados.ESTADO, Reg_Dados.CIDADE);
+       --VALIDAR SE OS DADOS JÁ EXISTEM
+            SELECT 
+                COUNT(*)
+            INTO
+                V_COUNT
+            FROM 
+                C##OLAP.LOCALIDADE L
+            WHERE 
+                L.ESTADO = reg_Dados.ESTADO AND L.CIDADE = reg_Dados.CIDADE;
+        IF V_COUNT = 0 THEN
+            INSERT INTO C##OLAP.LOCALIDADE (ID_LOCAL, ESTADO, CIDADE)
+            VALUES (SQ_LOCALIDADE.NEXTVAL, Reg_Dados.ESTADO, Reg_Dados.CIDADE);
+        END IF;
     END LOOP;
     
     CLOSE cur_Dados;
     COMMIT;
 EXCEPTION
-    WHEN OTHERS THEN
+    WHEN DUP_VAL_ON_INDEX THEN
+        -- Trate a exceção de violação de unicidade
+        DBMS_OUTPUT.PUT_LINE('DADO:' || Reg_Dados.ESTADO || Reg_Dados.CIDADE);
+        DBMS_OUTPUT.PUT_LINE('Erro: Valor duplicado encontrado.');
         ROLLBACK;
         RAISE;
 END;
@@ -30,6 +50,8 @@ DECLARE
         SELECT M.DESCRICAO MODELO, MA.DESCRICAO MARCA 
         FROM C##OLTP.MARCA MA JOIN C##OLTP.MODELO M ON m.id_marca =  ma.id_marca;
     reg_Dados cur_Dados%ROWTYPE;
+    
+    V_COUNT NUMERIC;
 BEGIN
     OPEN cur_Dados;
     
@@ -38,15 +60,31 @@ BEGIN
         
         EXIT WHEN cur_Dados%NOTFOUND;
         
-        INSERT INTO C##OLAP.APARELHO (ID_APARELHO, MODELO, MARCA)
-        VALUES (SQ_APARELHO.NEXTVAL, Reg_Dados.MODELO, Reg_Dados.MARCA);
+        --VALIDAR SE OS DADOS JÁ EXISTEM
+        SELECT
+            COUNT(*)
+        INTO 
+            V_COUNT
+        FROM
+            C##OLAP.APARELHO
+        WHERE 
+            Reg_Dados.MODELO = APARELHO.MODELO AND Reg_Dados.MARCA = APARELHO.MARCA;
+        
+        IF V_COUNT = 0 THEN
+            --INSERIR OS DADOS
+            INSERT INTO C##OLAP.APARELHO (ID_APARELHO, MODELO, MARCA)
+            VALUES (SQ_APARELHO.NEXTVAL, Reg_Dados.MODELO, Reg_Dados.MARCA);
+        END IF;    
     END LOOP;
     
     CLOSE cur_Dados;
     
     COMMIT;
 EXCEPTION
-    WHEN OTHERS THEN
+    WHEN DUP_VAL_ON_INDEX THEN
+        -- Trate a exceção de violação de unicidade
+        DBMS_OUTPUT.PUT_LINE('DADO:' || Reg_Dados.modelo || Reg_Dados.marca);
+        DBMS_OUTPUT.PUT_LINE('Erro: Valor duplicado encontrado.');
         ROLLBACK;
         RAISE;
 END;
@@ -70,6 +108,7 @@ DECLARE
         FROM C##OLTP.COMPRA C;
     reg_Dados cur_Dados%ROWTYPE;
     QUADRIMESTRE NUMBER;
+    V_COUNT NUMERIC;
 BEGIN
     OPEN cur_Dados;
     
@@ -78,15 +117,29 @@ BEGIN
         
         EXIT WHEN cur_Dados%NOTFOUND;
         
-        INSERT INTO C##OLAP.TEMPO (ID_TEMPO, ANO, QUADRIMESTRE)
-        VALUES (SQ_TEMPO.NEXTVAL, reg_Dados.ano, reg_Dados.QUADRIMESTRE);
+        --Validar se os dados já existem
+        SELECT 
+            COUNT(*)
+        INTO
+            V_COUNT
+        FROM
+            C##OLAP.TEMPO
+        WHERE 
+            Reg_Dados.ANO = TEMPO.ANO AND Reg_Dados.QUADRIMESTRE = TEMPO.QUADRIMESTRE ;
+        IF V_COUNT = 0 THEN
+            INSERT INTO C##OLAP.TEMPO (ID_TEMPO, ANO, QUADRIMESTRE)
+            VALUES (SQ_TEMPO.NEXTVAL, reg_Dados.ano, reg_Dados.QUADRIMESTRE);
+        END IF;    
     END LOOP;
     
     CLOSE cur_Dados;
     
     COMMIT;
 EXCEPTION
-    WHEN OTHERS THEN
+    WHEN DUP_VAL_ON_INDEX THEN
+        -- Trate a exceção de violação de unicidade
+        DBMS_OUTPUT.PUT_LINE('DADO:' || Reg_Dados.ano || Reg_Dados.Quadrimestre);
+        DBMS_OUTPUT.PUT_LINE('Erro: Valor duplicado encontrado.');
         ROLLBACK;
         RAISE;
 END;
@@ -127,7 +180,7 @@ DECLARE
     CURRENT_ID_GENERO NUMERIC;
     CURRENT_ID_TEMPO NUMERIC;
     CURRENT_ID_LOCAL NUMERIC;
-    
+    V_COUNT NUMERIC;
 BEGIN
     OPEN C_VENDA;
     
@@ -146,8 +199,7 @@ BEGIN
         WHERE 
             LINHA.MODELO = APARELHO.MODELO AND LINHA.MARCA = APARELHO.MARCA;
         
-        SELECT * FROM C##OLAP.APARELHO;
-        
+                
         --SELECT TEMPO
         SELECT 
             ID_TEMPO
@@ -156,7 +208,7 @@ BEGIN
         FROM
             C##OLAP.TEMPO
         WHERE 
-            LINHA.ANO = TEMPO.ANO AND LINHA.QUADRIMESTRE = TEMPO.QUADRIMESTRE ;
+            LINHA.ANO = TEMPO.ANO AND LINHA.QUADRIMESTRE = TEMPO.QUADRIMESTRE;
             
             
             
@@ -181,21 +233,47 @@ BEGIN
         WHERE
             LINHA.SEXO = G.GENERO;
             
-        DBMS_OUTPUT.PUT_LINE('CURRENT_ID_APARELHO: ' || CURRENT_ID_APARELHO);
+      
+        --VALIDAR SE JÁ EXISTE
+        SELECT
+            COUNT(*)
+        INTO 
+            V_COUNT
+        FROM
+            C##OLAP.VENDA
+        WHERE
+            LINHA.ID_APARELHO = VENDA.ID_APARELHO AND 
+            LINHA.ID_LOCAL = VENDA.ID_LOCAL AND
+            LINHA.ID_GENERO = VENDA.ID_GENERO AND
+            LINHA.ID_TEMPO = VENDA.ID_TEMPO;
         
-        INSERT INTO C##OLAP.VENDA (ID_VENDA, ID_APARELHO, ID_LOCAL, ID_GENERO, ID_TEMPO, QUANTIDADE, VALOR)
-        VALUES (SQ_VENDA.NEXTVAL, CURRENT_ID_APARELHO, CURRENT_ID_LOCAL, CURRENT_ID_GENERO, CURRENT_ID_TEMPO, );
-    
+        IF V_COUNT = 0 THEN
+            --INSERIR OS DADOS
+            INSERT INTO C##OLAP.VENDA (ID_VENDA, ID_APARELHO, ID_LOCAL, ID_GENERO, ID_TEMPO, QUANTIDADE, VALOR)
+            VALUES (SQ_VENDA.NEXTVAL, CURRENT_ID_APARELHO, CURRENT_ID_LOCAL, CURRENT_ID_GENERO, CURRENT_ID_TEMPO, '1', LINHA.VALOR);
+        ELSE 
+            -- Se o registro existe, atualize os valores
+            UPDATE 
+                C##OLAP.VENDA
+            SET 
+                QUANTIDADE = QUANTIDADE + 1,
+                VALOR = VALOR + LINHA.VALOR
+            WHERE 
+                CURRENT_ID_APARELHO = VENDA.ID_APARELHO AND 
+                CURRENT_ID_LOCAL = VENDA.ID_LOCAL AND
+                CURRENT_ID_GENERO = VENDA.ID_GENERO AND
+                CURRENT_ID_TEMPO = VENDA.ID_TEMPO;
+        END IF;
     END LOOP;
     
     CLOSE C_VENDA;
 
-    -- COMMIT; 
+    COMMIT; 
 
 EXCEPTION
-    WHEN OTHERS THEN
+    WHEN DUP_VAL_ON_INDEX THEN
+        -- Trate a exceção de violação de unicidade
+        DBMS_OUTPUT.PUT_LINE('Erro: Valor duplicado encontrado.');
         ROLLBACK;
         RAISE;
-    
 END;
-
