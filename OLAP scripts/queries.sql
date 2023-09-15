@@ -30,7 +30,19 @@ GROUP BY ROLLUP(A.MARCA, A.MODELO)
 ORDER BY MARCA, MODELO;
 
 -- f) Visualizar o ranking dos smartphones com maior valor de venda por estado, em um determinado ano
-
+SELECT 
+    L.ESTADO AS Estado,
+    A.MODELO AS Modelo,
+    A.MARCA AS Marca,
+    T.ANO AS Ano,
+    SUM(V.VALOR) AS Valor_Total_Vendas
+FROM VENDA V
+JOIN APARELHO A ON V.ID_APARELHO = A.ID_APARELHO
+JOIN LOCALIDADE L ON V.ID_LOCAL = L.ID_LOCAL
+JOIN TEMPO T ON V.ID_TEMPO = T.ID_TEMPO
+WHERE T.ANO = 2020
+GROUP BY L.ESTADO, A.MODELO, A.MARCA, T.ANO
+ORDER BY L.ESTADO, Valor_Total_Vendas DESC;
 
 -- g) Visualizar o percentual de venda de cada smartphone em um determinado quadrimestre e ano;
 SELECT 
@@ -52,6 +64,22 @@ GROUP BY
     A.MODELO, A.MARCA;
 
 -- h) Visualizar a diferença na quantidade das vendas de cada smartphone entre dois anos consecutivos
-
+SELECT T.ANO, A.MARCA, A.MODELO, SUM(V.QUANTIDADE) AS QUANTIDADE_TOTAL, LAG(SUM(V.QUANTIDADE),1,0) OVER (ORDER BY A.MARCA, A.MODELO) AS QUANTIDADE_ANTERIOR, SUM(V.QUANTIDADE) - LAG(SUM(V.QUANTIDADE),1,0) OVER (ORDER BY A.MARCA, A.MODELO) AS DIFERENCA_QUANTIDADE
+FROM VENDA V
+JOIN APARELHO A ON V.ID_APARELHO = A.ID_APARELHO
+JOIN TEMPO T ON V.ID_TEMPO = T.ID_TEMPO
+GROUP BY A.MARCA, A.MODELO, T.ANO
+ORDER BY A.MARCA, A.MODELO, T.ANO;
 
 -- i) Visualizar a diferença entre a quantidade e os valores vendidos entre a nossa empresa e a concorrente por quadrimestre e/ou ano
+SELECT A.MARCA, A.MODELO, T1.ANO AS Ano, T2.ANO AS Ano_Concorrente, 
+       V1.QUANTIDADE AS Quantidade_Ano, V2.QUANTIDADE AS Quantidade_Ano_Concorrente,
+       V1.VALOR AS Valor_Ano, V2.VALOR AS Valor_Ano_Concorrente,
+       (V2.QUANTIDADE - V1.QUANTIDADE) AS Diferenca_Quantidade,
+       (V2.VALOR - V1.VALOR) AS Diferenca_Valor
+FROM VENDA V1
+JOIN VENDA V2 ON V1.ID_APARELHO = V2.ID_APARELHO
+JOIN APARELHO A ON V1.ID_APARELHO = A.ID_APARELHO
+JOIN TEMPO T1 ON V1.ID_TEMPO = T1.ID_TEMPO AND T1.QUADRIMESTRE = 1
+JOIN TEMPO T2 ON V2.ID_TEMPO = T2.ID_TEMPO AND T2.QUADRIMESTRE = 1
+WHERE T2.ANO = T1.ANO + 1; 
