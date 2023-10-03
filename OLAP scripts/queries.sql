@@ -2,7 +2,7 @@
 SELECT A.MARCA, A.MODELO, SUM(V.QUANTIDADE) AS QUANTIDADE_TOTAL, SUM(V.VALOR) AS VALOR_TOTAL
 FROM VENDA V
 JOIN APARELHO A ON V.ID_APARELHO = A.ID_APARELHO
-GROUP BY ROLLUP(A.MARCA, A.MODELO);
+GROUP BY ROLLUP(A.MARCA, A.MODELO)
 ORDER BY A.MARCA, A.MODELO;
 
 -- b) Visualizar a quantidade e o valor comprado dos seus produtos, geograficamente, pelas cidades e/ou estados
